@@ -227,7 +227,7 @@ switch (msg.payload.uplink_message.f_port) {
 
         data.measurements = measurementsArray;
 
-        // msg.payload = data;
+        msg.payload = data;
         node.error(data);
         break;
     case 7:
