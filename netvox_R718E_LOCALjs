@@ -1,0 +1,205 @@
+var _payload = msg.payload;
+
+//Device EUI arrives in xx-aa-bb-cc-dd-ff format
+//We need to change it to: xxaabbccddff 
+var devEui = msg.eui.toString();
+
+var data = {};
+
+data.eui = devEui.replace(/\-/g,"");
+
+function float32Process(h) {
+    var sign = (h & 0x8000) >> 15;
+    var exp = (h & 0x7F80) >> 7;
+    var fraction = (h & 0x007F) << 16;
+
+    if (exp == 0) {
+        return (sign ? -1 : 1) * Math.pow(2, -126) * (fraction / Math.pow(2, 23));
+    } else if (exp == 0xFF) {
+        return fraction ? NaN : ((sign ? -1 : 1) * Infinity);
+    }
+
+    return (sign ? -1 : 1) * Math.pow(2, exp - 127) * (1 + (fraction / Math.pow(2, 23)));
+}
+
+switch (msg.port) {
+    case 6:
+        
+        //Getting a timestamp
+        var timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        data.timestamp = timestamp;
+
+        //Creating empty array to store the data
+        var measurementsArray=[];
+        
+        //getting 3rd byte - Report Type
+        var reportType = _payload[2];
+      
+        if (reportType === 0){
+            //don't care
+        }
+        else if (reportType===1){
+            
+            //getting 4th byte - Battery
+            var batteryHex = _payload[3];
+            
+            var volt;
+            if (batteryHex & 0x80) {
+                var tmp_v = batteryHex & 0x7F;
+                volt = tmp_v / 10;
+                // data.Volt = (tmp_v / 10);
+            }
+            else
+                // data.Volt = hex/10;
+                volt = batteryHex / 10;
+
+            var measurement1 = {
+                type: "voltage",
+                value: volt
+            }
+            measurementsArray.push(measurement1);
+
+            // -------------------------------
+            // AccelerationX
+            // --------------------------------
+            //getting 5th and 6th bytes
+            var accelX1 = _payload[4]; 
+            var accelX2 = _payload[5];
+            
+
+            var accelerationX = parseFloat(float32Process(accelX2 << 8 | accelX1).toFixed(6));
+
+
+            var measurement2 =
+            {
+                type: "accelerationX",
+                value: accelerationX
+            }
+            measurementsArray.push(measurement2);
+
+
+            // -------------------------------
+            // AccelerationY
+            // --------------------------------
+            //getting 7th and 8th bytes
+            var accelY1 = _payload[6]; 
+            var accelY2 = _payload[7];
+
+            var accelerationY = parseFloat(float32Process(accelY2 << 8 | accelY1).toFixed(6));
+
+            var measurement3 =
+            {
+                type: "accelerationY",
+                value: accelerationY
+            }
+            measurementsArray.push(measurement3);
+
+            // -------------------------------
+            // AccelerationZ
+            // --------------------------------
+            //getting 9th and 10th bytes
+            var accelZ1 = _payload[8];
+            var accelZ2 = _payload[9];
+         
+
+            var accelerationZ = parseFloat(float32Process(accelZ2 << 8 | accelZ1).toFixed(6));
+
+          
+            var measurement4 =
+            {
+                type: "accelerationZ",
+                value: accelerationZ
+            }
+            measurementsArray.push(measurement4);
+
+        }
+        else if(reportType===2){
+
+            //TODO on 15/03/2023
+
+            // -------------------------------
+            // VelocityX
+            // --------------------------------
+            //getting 4th and 5th bytes
+            var velocityX1 = _payload[3];
+            var velocityX2 = _payload[4];
+            
+            var velocityX = parseFloat(float32Process(velocityX2 << 8 | velocityX1).toFixed(6));
+
+
+            var measurement1 =
+            {
+                type: "velocityX",
+                value: velocityX
+            }
+            measurementsArray.push(measurement1);
+
+            // -------------------------------
+            // VelocityY
+            // --------------------------------
+            //getting 6th and &th bytes
+            var velocityY1 = _payload[5]
+            var velocityY2 = _payload[6]
+            
+            var velocityY = parseFloat(float32Process(velocityY2 << 8 | velocityY1).toFixed(6));
+
+
+            var measurement2 =
+            {
+                type: "velocityY",
+                value: velocityY
+            }
+            measurementsArray.push(measurement2);
+
+            // -------------------------------
+            // VelocityZ
+            // --------------------------------
+            //getting 6th and &th bytes
+            var velocityZ1 = _payload[5]
+            var velocityZ2 = _payload[6]
+            
+            var velocityZ = parseFloat(float32Process(velocityZ2 << 8 | velocityZ1).toFixed(6));
+
+            var measurement3 =
+            {
+                type: "velocityZ",
+                value: velocityZ
+            }
+            measurementsArray.push(measurement3);
+
+
+
+            // -------------------------------
+            // TEMPERATURE
+            // --------------------------------
+            var temperature;
+            if (_payload[9] & 0x80)
+			{
+				var tmpval = (_payload[9]<<8 | _payload[10]);
+				temperature = (0x10000 - tmpval)/10 * -1;
+			}
+			else
+				temperature = (_payload[9]<<8 | _payload[10])/10;
+           
+            var measurement4 =
+            {
+                type: "temperature",
+                value: temperature
+                
+            }
+            measurementsArray.push(measurement4);
+
+        }
+
+        data.measurements = measurementsArray;
+     
+        msg.payload = data;
+        break;
+    case 7:
+        //TODO
+        // NOT NECESSARY TO FETCH DATA. USED FOR CONFIGURATION
+        break;
+
+}
+
+return msg;
