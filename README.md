@@ -1,9 +1,9 @@
 # festo-nodeRed-decoders
 A set of NodeRed decoders for LoRA devices
 
-#H1 Festo 2.4 Work Package Decoders
+# Festo 2.4 Work Package Decoders
 
-####LoRa Sensing Devices
+# LoRa Sensing Devices
                 
 + Watteco
     + Intenso
