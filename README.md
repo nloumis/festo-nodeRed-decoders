@@ -10,5 +10,7 @@ A set of NodeRed decoders for LoRA devices
 + Netvox
     + Acceleration and Temperature
     + Vibration
++ Milesight
+    + WS52x - Portable socket
     
     
